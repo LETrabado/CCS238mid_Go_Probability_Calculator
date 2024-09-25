@@ -84,7 +84,7 @@
     </style>
   </head>
   <body>
-    <form hx-post="/probability" hx-target="#answer">
+    <form hx-post="/probability" hx-target="#answer" onsubmit="submitAnswer()">
       <h1>Dice Probability Calculator</h1>
       <label for="numDice">Enter number of Dice (max 5):</label>
       <input
@@ -118,6 +118,7 @@
       <div id="inputs-container" class="input-container"></div>
       <br />
       <input type="submit" name="action" value="IndivProbability" />
+      <input type="hidden" name="answer" id="answerInput" />
     </form>
     <div id="answer">
       <h3>{{.Answer}}</h3>
@@ -129,6 +130,11 @@
     </button>
     <!-- Scripts used for UI purposes only especially for adjusting inputs boxes for the Specific Combinations input -->
     <script>
+      function submitAnswer() {
+        const answerContent = document.getElementById("answer").textContent;
+        document.getElementById("answerInput").value = answerContent;
+      }
+
       function createInputs() {
         const container = document.getElementById("inputs-container");
         const numberOfInputs = parseInt(

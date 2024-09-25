@@ -12,16 +12,17 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 )
 
-type Data struct{
-	Dice   int
-	Sides  int
-	Sum    int
-	Answer string
-}
+// type Data struct{
+// 	Dice   int
+// 	Sides  int
+// 	Sum    int
+// 	Answer string
+// }
 
 func main() {
 	// Parse the template file
@@ -40,6 +41,7 @@ func main() {
 			Sum     int
 			Answer  string
 			Subsets []int
+			FormResult string
 		}
 
 		var data Data
@@ -50,6 +52,12 @@ func main() {
 			// Retrieve form values and convert them to integers
 			dice, _ := strconv.Atoi(r.FormValue("dice"))
 			sides, _ := strconv.Atoi(r.FormValue("sides"))
+			formresult:= strings.TrimSpace(r.FormValue("answer"))
+			formresultlines := strings.Split(formresult, "\n")
+			fmt.Printf("form result value: %s \n",formresult)
+			for i, line := range formresultlines {
+				fmt.Printf("Line %d: %s\n", i+1 , line)
+			}
 			results := [][]int{}
 			rollDice(dice, sides, []int{}, &results)
 
@@ -59,7 +67,8 @@ func main() {
 				data.Sum = sum
 				// Call the probability function (placeholder logic)
 				sum_result = fmt.Sprint(probability(sumRes(results, sum), len(results)))
-				data.Answer = fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
+				answer := fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
+				data.Answer = answer + " <br>\n" + formresultlines[1]
 			} else if r.FormValue("action") == "IndivProbability" {
 				// Retrieve subset values (the dynamically created inputs)
 				subsetValues := r.Form["subset[]"]
@@ -73,20 +82,20 @@ func main() {
 				// Store the subsets in the data and create a response
 				data.Subsets = subsets
 				indiv_result = fmt.Sprint(probability(indivRes(&subsets, &results), len(results)))
-				data.Answer = fmt.Sprintf("Probability for getting specific combination: %s%%", indiv_result)
+				answer := fmt.Sprintf("Probability for getting specific combination: %s%%", indiv_result)
+				data.Answer = formresultlines[0] + "<br>\n" + answer
 			}
 
 			// Set the data struct with values from the form and answer
 			data.Dice = dice
 			data.Sides = sides
-			
 			// Render only the answer part (used by HTMX for partial update)
 			tmpl.ExecuteTemplate(w, "answer", data)
 			return
 		}
 
 		// For GET request, show the form with no answer initially
-		data = Data{Answer: ""}
+		data = Data{Answer: "Probability of getting the total: _ \n<br>Probability for getting specific combination: _ "}
 		tmpl.ExecuteTemplate(w, "index.html", data)
 	})
 
