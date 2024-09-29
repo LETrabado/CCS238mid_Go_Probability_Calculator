@@ -18,12 +18,6 @@ import (
 	"time"
 )
 
-// type Data struct{
-// 	Dice   int
-// 	Sides  int
-// 	Sum    int
-// 	Answer string
-// }
 
 func main() {
 	// Parse the template file
@@ -55,25 +49,20 @@ func main() {
 			sides, _ := strconv.Atoi(r.FormValue("sides"))
 			formresult:= strings.TrimSpace(r.FormValue("answer"))
 			formresultlines := strings.Split(formresult, "\n")
-			fmt.Printf("form result value: %s \n",formresult)
-			// for i, line := range formresultlines {
-			// 	fmt.Printf("Line %d: %s\n", i+1 , line)
-			// }
-			results := [][]int{}
-
-			//get all possible combinations
-			rollDice(dice, sides, []int{}, &results)
+			//fmt.Printf("form result value: %s \n",formresult)
 
 			// Check which button was clicked by looking at the name/value of the submit button
 			if r.FormValue("action") == "Sum Probability" {
 				// Retrieve sum values
 				sum, _ := strconv.Atoi(r.FormValue("sum"))
 				data.Sum = sum
-				// Call the probability function (placeholder logic)
-				//sum_result = fmt.Sprint(probability(sumRes(results, sum), len(results)))
-				sum_result = fmt.Sprint(OsumProbability(dice, sides, sum))
+				start := time.Now()
+				fmt.Println("Stopwatch started...")
+				sum_result = formatNumber(sumProbability(dice, sides, sum))
 				answer := fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
 				data.Answer = answer + " <br>\n" + formresultlines[1]
+				elapsed := time.Since(start)
+				fmt.Printf("Elapsed time: %s\n", elapsed)
 			} else if r.FormValue("action") == "Combination Probability" {
 				// Retrieve subset values (the dynamically created inputs)
 				subsetValues := r.Form["subset[]"]
@@ -86,9 +75,12 @@ func main() {
 
 				// Store the subsets in the data and create a response
 				data.Subsets = subsets
-				//indiv_result = fmt.Sprint(probability(indivRes(&subsets, &results), len(results)))
-				indiv_result = fmt.Sprint(OindivProbability(dice, sides, subsets))
+				start := time.Now()
+				fmt.Println("Stopwatch started...")
+				indiv_result = formatNumber(indivProbability(dice, sides, subsets))
 				answer := fmt.Sprintf("Probability for getting specific combination: %s%%", indiv_result)
+				elapsed := time.Since(start)
+				fmt.Printf("Elapsed time: %s\n", elapsed)
 				data.Answer = formresultlines[0] + "<br>\n" + answer
 			}
 
@@ -105,8 +97,6 @@ func main() {
 		tmpl.ExecuteTemplate(w, "index.html", data)
 	})
 
-	// Start the server
-	
 		// Handle server shutdown
 		http.HandleFunc("/shutdown", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "Server is shutting down...")
@@ -131,8 +121,8 @@ func probability(desResult int, posResult int) float64 {
 	result := (float64(desResult) / float64(posResult)) * 100
 	return result
 }
-
-func OsumProbability(dn, ds, sum int) float64 {
+//SUM PROBABILITY CALCULATOR
+func sumProbability(dn, ds, sum int) float64 {
 	// Helper function to calculate all possible combinations recursively.
 	var countCombinations func(dn, sum, sides int) int
 	countCombinations = func(dn, sum, sides int) int {
@@ -142,30 +132,27 @@ func OsumProbability(dn, ds, sum int) float64 {
 			}
 			return 0
 		}
-
 		count := 0
 		for i := 1; i <= sides; i++ {
 			count += countCombinations(dn-1, sum-i, sides)
 		}
 		return count
 	}
-
 	// Calculate the number of possible rolls resulting in the sum.
 	desRes := countCombinations(dn, sum, ds)
-
 	// Calculate the number of all possible rolls.
 	totalPossibleRolls := int(math.Pow(float64(ds), float64(dn)))
-
 	// Call the provided probability function.
 	return probability(desRes, totalPossibleRolls)
 }
 
-func OindivProbability(dn, ds int, subset []int) float64 {
-	count := 0
 
+//COMBINATION PROBABILITY CALCULATOR
+func indivProbability(dn, ds int, subset []int) float64 {
+	count := 0
 	// Helper function to roll the dice and check the subset.
-	var rollDiceHelper func(dn int, result []int)
-	rollDiceHelper = func(dn int, result []int) {
+	var rollDice func(dn int, result []int)
+	rollDice = func(dn int, result []int) {
 		// Base case: If we have rolled all the dice, check the result.
 		if dn == 0 {
 			if containsSubset(result, subset) {
@@ -173,22 +160,19 @@ func OindivProbability(dn, ds int, subset []int) float64 {
 			}
 			return
 		}
-
 		// Try all sides of the dice for the current roll.
 		for i := 1; i <= ds; i++ {
-			rollDiceHelper(dn-1, append(result, i))
+			rollDice(dn-1, append(result, i))
 		}
 	}
-
 	// Total possible rolls.
 	totalCount := int(math.Pow(float64(ds), float64(dn)))
-
 	// Start rolling the dice.
-	rollDiceHelper(dn, []int{})
-
+	rollDice(dn, []int{})
 	// Calculate and return the probability.
 	return probability(count, totalCount)
 }
+
 // containsSubset checks if result contains all elements of the subset.
 func containsSubset(result []int, subset []int) bool {
 	// Create a frequency map for both result and subset.
@@ -209,83 +193,14 @@ func containsSubset(result []int, subset []int) bool {
 	return true
 }
 
-//~++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
-// ALL OUTCOME
-func rollDice(dn, ds int, result []int, results *[][]int) {
-	// Base case: If we have rolled all the dice, append the result
-	if dn == 0 {
-		*results = append(*results, append([]int{}, result...))
-		return
+func formatNumber(value float64) string {
+	if value == 0 {
+		return "0" // Display zero as "0"
 	}
-
-	// Try all sides of the dice for the current roll
-	for i := 1; i <= ds; i++ {
-		rollDice(dn-1, ds, append(result, i), results)
+	if value < 0.01 && value > -0.01 {
+		return fmt.Sprintf("%.2e", value) // Use scientific notation for very small values
 	}
-}
-
-//INDIVIDUAL OUTCOME
-func indivRes(desRes *[]int, allRes *[][]int) int {
-
-	// Array to store results that contain the subset x
-	validResults := [][]int{}
-
-	// Check which combinations contain subset x and store them
-	for _, result := range *allRes{
-		if containsSubset2(result, *desRes) {
-			validResults = append(validResults, result)
-		}
-	}
-	//Printing results
-	// fmt.Printf("Combinations that contain the subset %v:\n", desRes)
-	// for _, result := range validResults {
-	// 	fmt.Println(result)
-	// }
-	return len(validResults)
-}
-
-// TOTAL OUTCOME
-func sumRes(results [][]int, target int) int {
-	validCombinations := [][]int{}
-
-	// Iterate over all the results and calculate the sum
-	for _, result := range results {
-		sum := 0
-		for _, num := range result {
-			sum += num
-		}
-		// If the sum equals the target, add the result to the valid combinations
-		if sum == target {
-			validCombinations = append(validCombinations, result)
-		}
-	}
-	// Printing Results
-	// fmt.Printf("Combinations that totals the target %d:\n", target)
-	// for _, result := range validCombinations {
-	// 	fmt.Println(result)
-	// }
-	return len(validCombinations)
-}
-
-
-
-// containsSubset checks if result contains all elements of the subset
-func containsSubset2(result, subset []int) bool {
-	// Create a frequency map for both result and subset
-	resultCount := make(map[int]int)
-	for _, val := range result {
-		resultCount[val]++
-	}
-
-	for _, val := range subset {
-		// If an element in subset is missing or occurs less often in result, return false
-		if resultCount[val] == 0 {
-			return false
-		}
-		resultCount[val]--
-	}
-
-	return true
+	return fmt.Sprintf("%.2f", value) // Use standard decimal format otherwise
 }
 
 //function for opening browser when running the application
