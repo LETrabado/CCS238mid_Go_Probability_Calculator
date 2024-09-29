@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -69,7 +70,8 @@ func main() {
 				sum, _ := strconv.Atoi(r.FormValue("sum"))
 				data.Sum = sum
 				// Call the probability function (placeholder logic)
-				sum_result = fmt.Sprint(probability(sumRes(results, sum), len(results)))
+				//sum_result = fmt.Sprint(probability(sumRes(results, sum), len(results)))
+				sum_result = fmt.Sprint(OsumProbability(dice, sides, sum))
 				answer := fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
 				data.Answer = answer + " <br>\n" + formresultlines[1]
 			} else if r.FormValue("action") == "Combination Probability" {
@@ -84,7 +86,8 @@ func main() {
 
 				// Store the subsets in the data and create a response
 				data.Subsets = subsets
-				indiv_result = fmt.Sprint(probability(indivRes(&subsets, &results), len(results)))
+				//indiv_result = fmt.Sprint(probability(indivRes(&subsets, &results), len(results)))
+				indiv_result = fmt.Sprint(OindivProbability(dice, sides, subsets))
 				answer := fmt.Sprintf("Probability for getting specific combination: %s%%", indiv_result)
 				data.Answer = formresultlines[0] + "<br>\n" + answer
 			}
@@ -124,11 +127,89 @@ func main() {
 }
 
 //PROBABILITY FORMULA
-func probability(desResult int, posResult int) float32 {
-	result := (float32(desResult) / float32(posResult)) * 100
+func probability(desResult int, posResult int) float64 {
+	result := (float64(desResult) / float64(posResult)) * 100
 	return result
 }
 
+func OsumProbability(dn, ds, sum int) float64 {
+	// Helper function to calculate all possible combinations recursively.
+	var countCombinations func(dn, sum, sides int) int
+	countCombinations = func(dn, sum, sides int) int {
+		if dn == 0 {
+			if sum == 0 {
+				return 1
+			}
+			return 0
+		}
+
+		count := 0
+		for i := 1; i <= sides; i++ {
+			count += countCombinations(dn-1, sum-i, sides)
+		}
+		return count
+	}
+
+	// Calculate the number of possible rolls resulting in the sum.
+	desRes := countCombinations(dn, sum, ds)
+
+	// Calculate the number of all possible rolls.
+	totalPossibleRolls := int(math.Pow(float64(ds), float64(dn)))
+
+	// Call the provided probability function.
+	return probability(desRes, totalPossibleRolls)
+}
+
+func OindivProbability(dn, ds int, subset []int) float64 {
+	count := 0
+
+	// Helper function to roll the dice and check the subset.
+	var rollDiceHelper func(dn int, result []int)
+	rollDiceHelper = func(dn int, result []int) {
+		// Base case: If we have rolled all the dice, check the result.
+		if dn == 0 {
+			if containsSubset(result, subset) {
+				count++
+			}
+			return
+		}
+
+		// Try all sides of the dice for the current roll.
+		for i := 1; i <= ds; i++ {
+			rollDiceHelper(dn-1, append(result, i))
+		}
+	}
+
+	// Total possible rolls.
+	totalCount := int(math.Pow(float64(ds), float64(dn)))
+
+	// Start rolling the dice.
+	rollDiceHelper(dn, []int{})
+
+	// Calculate and return the probability.
+	return probability(count, totalCount)
+}
+// containsSubset checks if result contains all elements of the subset.
+func containsSubset(result []int, subset []int) bool {
+	// Create a frequency map for both result and subset.
+	resultCount := make(map[int]int)
+
+	for _, val := range result {
+		resultCount[val]++
+	}
+
+	for _, val := range subset {
+		// If an element in subset is missing or occurs less often in result, return false.
+		if resultCount[val] == 0 {
+			return false
+		}
+		resultCount[val]--
+	}
+
+	return true
+}
+
+//~++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
 // ALL OUTCOME
 func rollDice(dn, ds int, result []int, results *[][]int) {
 	// Base case: If we have rolled all the dice, append the result
@@ -151,7 +232,7 @@ func indivRes(desRes *[]int, allRes *[][]int) int {
 
 	// Check which combinations contain subset x and store them
 	for _, result := range *allRes{
-		if containsSubset(result, *desRes) {
+		if containsSubset2(result, *desRes) {
 			validResults = append(validResults, result)
 		}
 	}
@@ -189,7 +270,7 @@ func sumRes(results [][]int, target int) int {
 
 
 // containsSubset checks if result contains all elements of the subset
-func containsSubset(result, subset []int) bool {
+func containsSubset2(result, subset []int) bool {
 	// Create a frequency map for both result and subset
 	resultCount := make(map[int]int)
 	for _, val := range result {
