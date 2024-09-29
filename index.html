@@ -3,25 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Form Example</title>
+    <title>Go Probability Calculator</title>
     <script src="https://unpkg.com/htmx.org@1.7.0"></script>
-    <link rel="stylesheet" href="styles.css" />
     <style>
       /* temporary style */
       body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         font-family: Arial, sans-serif;
-        line-height: 1.6;
-        margin: 20px;
+        margin: 0;
+      }
+      .container {
+        text-align: center;
+        width: 60vw;
       }
 
       h1 {
         color: #333;
         text-align: center;
       }
-
+      h3 {
+        margin: 0%;
+      }
+      p {
+        margin: 0%;
+      }
       label {
         display: block;
-        margin-bottom: 8px;
         font-weight: bold;
       }
 
@@ -35,7 +44,7 @@
       }
 
       input[type="submit"] {
-        background-color: #007bff;
+        background-color: #ee6d11;
         color: #fff;
         border: none;
         padding: 10px 20px;
@@ -56,7 +65,7 @@
       }
 
       input[type="submit"]:hover {
-        background-color: #0056b3;
+        background-color: #f1893f;
       }
 
       span.validity {
@@ -67,11 +76,13 @@
       }
 
       #inputs-container {
-        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        margin: 0px;
       }
 
       #answer {
-        margin-top: 20px;
+        margin-top: 0px;
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -84,50 +95,58 @@
     </style>
   </head>
   <body>
-    <form hx-post="/probability" hx-target="#answer" onsubmit="submitAnswer()">
-      <h1>Dice Probability Calculator</h1>
-      <label for="numDice">Enter number of Dice (max 5):</label>
-      <input
-        type="number"
-        id="numDice"
-        name="dice"
-        min="1"
-        max="5"
-        value="1"
-        required
-      />
-      <span class="validity"></span>
-      <label for="numSides">Enter number of Sides (max 20)</label>
-      <input
-        type="number"
-        id="numSides"
-        name="sides"
-        min="1"
-        max="20"
-        value="6"
-        required
-      />
-      <span class="validity"></span>
-      <h3>Sum</h3>
-      <p>enter desired sum of dice results</p>
-      <input id="sum" type="number" name="sum" step="1" min="0" max="100" />
-      <span class="validity"></span>
-      <input type="submit" name="action" value="SumProbability" />
-      <h3>Dice Combinations</h3>
-      <p>Enter specific dice combinations</p>
-      <div id="inputs-container" class="input-container"></div>
-      <br />
-      <input type="submit" name="action" value="IndivProbability" />
-      <input type="hidden" name="answer" id="answerInput" />
-    </form>
-    <div id="answer">
-      <h3>{{.Answer}}</h3>
+    <div class="container">
+      <form
+        hx-post="/probability"
+        hx-target="#answer"
+        onsubmit="submitAnswer()"
+      >
+        <div class="title">
+          <h1>Go Dice Probability Calculator</h1>
+        </div>
+        <label for="numDice">Enter number of Dice (max 5):</label>
+        <input
+          type="number"
+          id="numDice"
+          name="dice"
+          min="1"
+          max="5"
+          value="1"
+          required
+        />
+        <span class="validity"></span>
+        <label for="numSides">Enter number of Sides (max 20)</label>
+        <input
+          type="number"
+          id="numSides"
+          name="sides"
+          min="1"
+          max="20"
+          value="6"
+          required
+        />
+        <span class="validity"></span>
+        <h3>Sum</h3>
+        <p>enter desired sum of dice results</p>
+        <input id="sum" type="number" name="sum" step="1" min="0" max="100" />
+        <span class="validity"></span>
+        <input type="submit" name="action" value="Sum Probability" />
+        <h3>Dice Combinations</h3>
+        <p>Enter specific dice combinations</p>
+        <div id="inputs-container" class="input-container"></div>
+        <br />
+        <input type="submit" name="action" value="Combination Probability" />
+        <input type="hidden" name="answer" id="answerInput" />
+      </form>
+      <div id="answer">
+        <h3>{{.Answer}}</h3>
+      </div>
+      <!-- <br />
+      <p>Temporary button for closing local server</p>
+      <button hx-get="/shutdown" hx-target="this" hx-swap="outerHTML">
+        Close Server
+      </button> -->
     </div>
-    <br />
-    <p>Temporary button for closing local server</p>
-    <button hx-get="/shutdown" hx-target="this" hx-swap="outerHTML">
-      Close Server
-    </button>
     <!-- Scripts used for UI purposes only especially for adjusting inputs boxes for the Specific Combinations input -->
     <script>
       function submitAnswer() {
@@ -201,5 +220,5 @@
 </html>
 
 {{define "answer"}}
-<h1>{{.Answer}}</h1>
+<h3>{{.Answer}}</h3>
 {{end}}

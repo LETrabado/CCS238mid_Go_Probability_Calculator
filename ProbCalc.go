@@ -55,21 +55,24 @@ func main() {
 			formresult:= strings.TrimSpace(r.FormValue("answer"))
 			formresultlines := strings.Split(formresult, "\n")
 			fmt.Printf("form result value: %s \n",formresult)
-			for i, line := range formresultlines {
-				fmt.Printf("Line %d: %s\n", i+1 , line)
-			}
+			// for i, line := range formresultlines {
+			// 	fmt.Printf("Line %d: %s\n", i+1 , line)
+			// }
 			results := [][]int{}
+
+			//get all possible combinations
 			rollDice(dice, sides, []int{}, &results)
 
 			// Check which button was clicked by looking at the name/value of the submit button
-			if r.FormValue("action") == "SumProbability" {
+			if r.FormValue("action") == "Sum Probability" {
+				// Retrieve sum values
 				sum, _ := strconv.Atoi(r.FormValue("sum"))
 				data.Sum = sum
 				// Call the probability function (placeholder logic)
 				sum_result = fmt.Sprint(probability(sumRes(results, sum), len(results)))
 				answer := fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
 				data.Answer = answer + " <br>\n" + formresultlines[1]
-			} else if r.FormValue("action") == "IndivProbability" {
+			} else if r.FormValue("action") == "Combination Probability" {
 				// Retrieve subset values (the dynamically created inputs)
 				subsetValues := r.Form["subset[]"]
 				var subsets []int
@@ -152,10 +155,11 @@ func indivRes(desRes *[]int, allRes *[][]int) int {
 			validResults = append(validResults, result)
 		}
 	}
-	fmt.Printf("Combinations that contain the subset %v:\n", desRes)
-	for _, result := range validResults {
-		fmt.Println(result)
-	}
+	//Printing results
+	// fmt.Printf("Combinations that contain the subset %v:\n", desRes)
+	// for _, result := range validResults {
+	// 	fmt.Println(result)
+	// }
 	return len(validResults)
 }
 
@@ -174,10 +178,11 @@ func sumRes(results [][]int, target int) int {
 			validCombinations = append(validCombinations, result)
 		}
 	}
-	fmt.Printf("Combinations that totals the target %d:\n", target)
-	for _, result := range validCombinations {
-		fmt.Println(result)
-	}
+	// Printing Results
+	// fmt.Printf("Combinations that totals the target %d:\n", target)
+	// for _, result := range validCombinations {
+	// 	fmt.Println(result)
+	// }
 	return len(validCombinations)
 }
 
