@@ -57,12 +57,13 @@ func main() {
 				sum, _ := strconv.Atoi(r.FormValue("sum"))
 				data.Sum = sum
 				start := time.Now()
-				fmt.Println("Stopwatch started...")
+				fmt.Printf("Dice: %v, Sides: %v\n", dice, sides)
+				fmt.Println("Calculating...")
 				sum_result = formatNumber(sumProbability(dice, sides, sum))
 				answer := fmt.Sprintf("Probability of getting the total: %s %%", sum_result)
 				data.Answer = answer + " <br>\n" + formresultlines[1]
 				elapsed := time.Since(start)
-				fmt.Printf("Elapsed time: %s\n", elapsed)
+				fmt.Printf("calculation completed in: %s\n", elapsed)
 			} else if r.FormValue("action") == "Combination Probability" {
 				// Retrieve subset values (the dynamically created inputs)
 				subsetValues := r.Form["subset[]"]
@@ -76,11 +77,12 @@ func main() {
 				// Store the subsets in the data and create a response
 				data.Subsets = subsets
 				start := time.Now()
-				fmt.Println("Stopwatch started...")
+				fmt.Printf("Dice: %v, Sides: %v\n", dice, sides)
+				fmt.Println("Calculating...")
 				indiv_result = formatNumber(indivProbability(dice, sides, subsets))
 				answer := fmt.Sprintf("Probability for getting specific combination: %s%%", indiv_result)
 				elapsed := time.Since(start)
-				fmt.Printf("Elapsed time: %s\n", elapsed)
+				fmt.Printf("calculation completed in: %s\n", elapsed)
 				data.Answer = formresultlines[0] + "<br>\n" + answer
 			}
 
@@ -116,14 +118,16 @@ func main() {
 		}
 }
 
-//PROBABILITY FORMULA
+//input: number of desired result int, number of all possible result int
+//output: probability float64
 func probability(desResult int, posResult int) float64 {
 	result := (float64(desResult) / float64(posResult)) * 100
 	return result
 }
-//SUM PROBABILITY CALCULATOR
+
+//input: dice number int, sides number int, sum int
+//output: probability float64
 func sumProbability(dn, ds, sum int) float64 {
-	// Helper function to calculate all possible combinations recursively.
 	var countCombinations func(dn, sum, sides int) int
 	countCombinations = func(dn, sum, sides int) int {
 		if dn == 0 {
@@ -138,38 +142,32 @@ func sumProbability(dn, ds, sum int) float64 {
 		}
 		return count
 	}
-	// Calculate the number of possible rolls resulting in the sum.
 	desRes := countCombinations(dn, sum, ds)
-	// Calculate the number of all possible rolls.
+	//GET total possible rolls.
 	totalPossibleRolls := int(math.Pow(float64(ds), float64(dn)))
-	// Call the provided probability function.
 	return probability(desRes, totalPossibleRolls)
 }
 
 
-//COMBINATION PROBABILITY CALCULATOR
+//input: dice number int, sides number int, combination array
+//output: probability float64
 func indivProbability(dn, ds int, subset []int) float64 {
 	count := 0
-	// Helper function to roll the dice and check the subset.
 	var rollDice func(dn int, result []int)
 	rollDice = func(dn int, result []int) {
-		// Base case: If we have rolled all the dice, check the result.
 		if dn == 0 {
 			if containsSubset(result, subset) {
 				count++
 			}
 			return
 		}
-		// Try all sides of the dice for the current roll.
 		for i := 1; i <= ds; i++ {
 			rollDice(dn-1, append(result, i))
 		}
 	}
-	// Total possible rolls.
+	// GET Total possible rolls.
 	totalCount := int(math.Pow(float64(ds), float64(dn)))
-	// Start rolling the dice.
 	rollDice(dn, []int{})
-	// Calculate and return the probability.
 	return probability(count, totalCount)
 }
 
